@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'http://localhost:3000/api/slots',
+    baseURL: 'https://parking-backend-rcqf.onrender.com'
+,
 });
 
 export const getSlots = () => API.get('/');
