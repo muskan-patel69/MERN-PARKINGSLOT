@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* Soft Glow for Primary Buttons */
+  .btn-glow-primary {
+    @apply transition-all duration-300;
+    box-shadow: 0 0 15px rgba(100, 25, 230, 0.3); /* Adjust color to your primary */
+  }
+
+  .btn-glow-primary:hover {
+    @apply -translate-y-0.5 shadow-2xl;
+    box-shadow: 0 0 25px rgba(100, 25, 230, 0.6);
+  }
+
+  /* Glassmorphism Card Style */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* Animated Gradient Background for the App */
+  .animated-bg {
+    background: linear-gradient(-45deg, #f3f4f6, #ffffff, #eef2ff, #fdf2f8);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
