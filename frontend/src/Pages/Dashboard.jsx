@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../lib/axios';
+import api from '../lib/axios'; 
 import { RATES } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { Activity, PlusCircle, ArrowLeft } from 'lucide-react';
