@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'https://backend-parking-smat.onrender.com'
+    baseURL: 'https://backend-parking-smat.onrender.com/api/slots'
 ,
 });
 
