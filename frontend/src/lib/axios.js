@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://parking-backend-rcqf.onrender.com"
+  baseURL: "https://backend-parking-smat.onrender.com"
   
 });
 
