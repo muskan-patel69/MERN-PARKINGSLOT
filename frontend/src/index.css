@@ -6,7 +6,7 @@
   /* Soft Glow for Primary Buttons */
   .btn-glow-primary {
     @apply transition-all duration-300;
-    box-shadow: 0 0 15px rgba(100, 25, 230, 0.3); /* Adjust color to your primary */
+    box-shadow: 0 0 15px rgba(100, 25, 230, 0.3);
   }
 
   .btn-glow-primary:hover {
