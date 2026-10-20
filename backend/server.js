@@ -10,7 +10,12 @@ connectDB();
 const app = express();
 
 app.use(cors({
+<<<<<<< HEAD
     origin: 'https://frontend-parking.onrender.com',
+=======
+    origin: 'http://localhost:5173'
+    ,
+>>>>>>> dd28d0f (added live duration and occupancy analytics)
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
