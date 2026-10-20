@@ -53,10 +53,10 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="p-6 space-y-6 bg-base-100 min-h-screen font-sans">
+    <div className="p-6 pt-10 space-y-6 bg-base-100 min-h-screen font-sans">
       
-      {/* HEADER SECTION */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-xl border border-base-200">
+      {/* HEADER SECTION WITH PROPER TOP SPACING */}
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-xl border border-base-200 mt-4">
         <div className="flex items-center gap-4">
           <Activity className="text-primary" size={32} strokeWidth={3} />
           <div>
