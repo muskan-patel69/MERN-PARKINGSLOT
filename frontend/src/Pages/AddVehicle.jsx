@@ -2,211 +2,188 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const VEHICLE_RATES = {
+  'Car / Sedan (Petrol)': 20,
+  'Bike / Scooty': 10,
+  'SUV / Large': 30,
+  'Electric Vehicle (EV)': 25,
+  'Truck / Heavy': 50
+};
+
 const AddVehicle = () => {
-  const [formData, setFormData] = useState({
-    licensePlate: 'MH05CJ8254',
-    vehicleType: 'Compact',
-    hasEVCharging: true,
-    isReserved: false,
-    manualSlot: 'A-G-1'
-  });
+  const [manualSlot, setManualSlot] = useState('');
+  const [licensePlate, setLicensePlate] = useState('');
+  const [vehicleCategory, setVehicleCategory] = useState('Car / Sedan (Petrol)');
+  const [durationHours, setDurationHours] = useState(1);
+  const [requiresEV, setRequiresEV] = useState(false);
+  const [isVIP, setIsVIP] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [assignedInfo, setAssignedInfo] = useState(null);
+
+  // Rate aur Total Fee calculate
+  const currentRate = VEHICLE_RATES[vehicleCategory] || 20;
+  const totalFee = currentRate * Math.max(1, Number(durationHours) || 1);
+
+  const handleCategoryChange = (e) => {
+    const selected = e.target.value;
+    setVehicleCategory(selected);
+    if (selected === 'Electric Vehicle (EV)') {
+      setRequiresEV(true);
+    } else {
+      setRequiresEV(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!licensePlate.trim()) {
+      return toast.error('Please enter vehicle plate number');
+    }
+
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/vehicles/checkin', {
-        licensePlate: formData.licensePlate,
-        vehicleType: formData.vehicleType,
-        requiresEV: formData.hasEVCharging,
-        isVIP: formData.isReserved
-      });
-      setAssignedInfo(res.data);
-      toast.success('Vehicle successfully checked in!');
+      const payload = {
+        licensePlate: licensePlate.trim().toUpperCase(),
+        vehicleType: vehicleCategory,
+        durationHours: Number(durationHours) || 1,
+        requiresEV,
+        isVIP,
+        manualSlot: manualSlot.trim() || undefined
+      };
+
+      const res = await axios.post('http://localhost:5000/api/vehicles/checkin', payload);
+      toast.success(`Allocated Slot: ${res.data.slotNumber} (Floor: ${res.data.floorLevel})`);
+
+      // Reset Form
+      setLicensePlate('');
+      setManualSlot('');
+      setDurationHours(1);
+      setRequiresEV(false);
+      setIsVIP(false);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Error checking in vehicle');
+      toast.error(err.response?.data?.message || 'Failed to check-in vehicle');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f3f4f6',
-      padding: '40px 16px',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '520px',
-        backgroundColor: '#ffffff',
-        borderRadius: '16px',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-        padding: '28px',
-        margin: 'auto'
-      }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#111827', marginBottom: '20px' }}>
-          Vehicle Check-In
-        </h2>
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+      <div className="bg-white max-w-md w-full p-8 rounded-3xl shadow-md border border-slate-200">
+        <h2 className="text-xl font-black text-slate-800 mb-6">Vehicle Check-In</h2>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
           {/* Manual Slot */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#6b7280', marginBottom: '6px', letterSpacing: '0.5px' }}>
-              MANUAL SLOT <span style={{ fontWeight: 'normal', color: '#9ca3af' }}>(OPTIONAL)</span>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              Manual Slot <span className="opacity-60 font-normal">(Optional)</span>
             </label>
             <input
               type="text"
-              value={formData.manualSlot}
-              onChange={(e) => setFormData({ ...formData, manualSlot: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-                backgroundColor: '#f9fafb',
-                fontWeight: '600',
-                outline: 'none'
-              }}
+              placeholder="e.g. A-101"
+              value={manualSlot}
+              onChange={(e) => setManualSlot(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 font-medium"
             />
           </div>
 
-          {/* License Plate */}
+          {/* Plate Number */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#6b7280', marginBottom: '6px', letterSpacing: '0.5px' }}>
-              PLATE NUMBER
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              Plate Number *
             </label>
             <input
               type="text"
               required
-              value={formData.licensePlate}
-              onChange={(e) => setFormData({ ...formData, licensePlate: e.target.value.toUpperCase() })}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-                backgroundColor: '#f9fafb',
-                fontWeight: '700',
-                fontSize: '15px',
-                letterSpacing: '1px',
-                outline: 'none'
-              }}
+              placeholder="MH05CJ8254"
+              value={licensePlate}
+              onChange={(e) => setLicensePlate(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 font-bold uppercase tracking-wider text-slate-800"
             />
           </div>
 
-          {/* Vehicle Type */}
+          {/* Vehicle Category Dropdown (Car, Bike/Scooty, Truck, EV, SUV) */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#6b7280', marginBottom: '6px', letterSpacing: '0.5px' }}>
-              VEHICLE CATEGORY
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              Vehicle Category *
             </label>
             <select
-              value={formData.vehicleType}
-              onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid #e5e7eb',
-                backgroundColor: '#ffffff',
-                outline: 'none'
-              }}
+              value={vehicleCategory}
+              onChange={handleCategoryChange}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500 font-semibold text-slate-700 bg-white cursor-pointer"
             >
-              <option value="Compact">Compact / Sedan</option>
-              <option value="SUV">SUV / Large</option>
-              <option value="EV">Electric Vehicle (EV)</option>
-              <option value="Handicapped">Handicapped / Accessible</option>
+              <option value="Car / Sedan (Petrol)">🚗 Car / Sedan (Petrol/Diesel)</option>
+              <option value="Bike / Scooty">🛵 Bike / Scooty (Two Wheeler)</option>
+              <option value="SUV / Large">🚙 SUV / Large Car</option>
+              <option value="Electric Vehicle (EV)">⚡ Electric Vehicle (EV)</option>
+              <option value="Truck / Heavy">🚛 Truck / Heavy Vehicle</option>
             </select>
           </div>
 
-          {/* Toggles */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-around',
-            backgroundColor: '#f9fafb',
-            padding: '12px',
-            borderRadius: '10px',
-            border: '1px solid #f3f4f6'
-          }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#4f46e5' }}>
-              <input
-                type="checkbox"
-                checked={formData.hasEVCharging}
-                onChange={(e) => setFormData({ ...formData, hasEVCharging: e.target.checked })}
-              />
-              ⚡ EV CHARGER
+          {/* Parking Duration (Hours) */}
+          <div>
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              Parking Duration (Kitne Ghante Rukegi) *
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#db2777' }}>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                max="72"
+                value={durationHours}
+                onChange={(e) => setDurationHours(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500"
+              />
+              <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Hour(s)</span>
+            </div>
+          </div>
+
+          {/* Checkbox Toggles: EV Charger & VIP */}
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs font-bold">
+            <label className="flex items-center gap-2 cursor-pointer text-amber-600">
               <input
                 type="checkbox"
-                checked={formData.isReserved}
-                onChange={(e) => setFormData({ ...formData, isReserved: e.target.checked })}
+                checked={requiresEV}
+                onChange={(e) => setRequiresEV(e.target.checked)}
+                className="w-4 h-4 rounded text-amber-500 cursor-pointer"
               />
-              🛡️ VIP RESERVED
+              <span>⚡ EV Charger</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-indigo-600">
+              <input
+                type="checkbox"
+                checked={isVIP}
+                onChange={(e) => setIsVIP(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 cursor-pointer"
+              />
+              <span>🛡️ VIP Reserved</span>
             </label>
           </div>
 
-          {/* Fee Card */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '12px 16px',
-            backgroundColor: '#f9fafb',
-            borderRadius: '10px',
-            border: '1px solid #e5e7eb'
-          }}>
+          {/* Dynamic Rate & Calculated Total Fee Card */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center">
             <div>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: '#6366f1' }}>CURRENT RATE</div>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>₹20/hr</div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Rate per Hour</span>
+              <span className="text-sm font-black text-slate-700">₹{currentRate}/hr</span>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '10px', fontWeight: '700', color: '#059669' }}>TOTAL FEE</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#059669' }}>₹20</div>
+            <div className="text-right">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Estimated Fee</span>
+              <span className="text-2xl font-black text-emerald-600">₹{totalFee}</span>
             </div>
           </div>
 
-          {/* Confirm & Add Vehicle Button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              backgroundColor: '#4f46e5',
-              color: '#ffffff',
-              fontSize: '15px',
-              fontWeight: '700',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: '10px',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)'
-            }}
+            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-indigo-600/25 transition cursor-pointer disabled:opacity-50"
           >
-            {loading ? 'Assigning Slot...' : 'Confirm & Add Vehicle'}
+            {loading ? 'Allocating Slot...' : 'Confirm & Add Vehicle'}
           </button>
-        </form>
 
-        {/* Assigned Slot Result Display */}
-        {assignedInfo && (
-          <div style={{
-            marginTop: '20px',
-            padding: '14px',
-            backgroundColor: '#ecfdf5',
-            border: '1px solid #a7f3d0',
-            borderRadius: '8px',
-            color: '#065f46',
-            textAlign: 'center'
-          }}>
-            <strong>Success! Slot Assigned:</strong> {assignedInfo.slotNumber || assignedInfo.slot?.slotNumber || 'Confirmed'}
-          </div>
-        )}
+        </form>
       </div>
     </div>
   );

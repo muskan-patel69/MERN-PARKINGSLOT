@@ -4,13 +4,12 @@ const vehicleSchema = new mongoose.Schema({
   licensePlate: {
     type: String,
     required: true,
-    trim: true,
-    uppercase: true
+    uppercase: true,
+    trim: true
   },
   vehicleType: {
     type: String,
-    enum: ['Compact', 'SUV', 'EV', 'Handicapped'],
-    default: 'Compact'
+    default: 'Car'
   },
   assignedSlot: {
     type: mongoose.Schema.Types.ObjectId,
@@ -22,8 +21,7 @@ const vehicleSchema = new mongoose.Schema({
     default: Date.now
   },
   checkOutTime: {
-    type: Date,
-    default: null
+    type: Date
   },
   feeCharged: {
     type: Number,

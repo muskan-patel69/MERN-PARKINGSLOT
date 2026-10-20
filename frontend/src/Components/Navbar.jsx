@@ -14,7 +14,7 @@ const Navbar = () => {
         <span className="text-base font-black text-white tracking-wide">ParkSmart System</span>
       </div>
 
-      <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+      <div className="flex gap-2 mt-2 sm:mt-0">
         <NavLink to="/" className={btnStyle}>
           Live Grid
         </NavLink>
@@ -23,9 +23,6 @@ const Navbar = () => {
         </NavLink>
         <NavLink to="/exit" className={btnStyle}>
           Exit & Finder Gate
-        </NavLink>
-        <NavLink to="/admin" className={btnStyle}>
-          Admin & Reports
         </NavLink>
       </div>
     </nav>
