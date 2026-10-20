@@ -1,224 +1,151 @@
 import React, { useState, useEffect } from 'react';
-import api from '../lib/axios';
-import { RATES } from '../lib/utils';
+import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Activity, PlusCircle, ArrowLeft } from 'lucide-react';
 
 const Dashboard = () => {
   const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    parkingSlot: '', 
-    vehicleNumber: '', 
-    vehicleType: 'Car',
-    entryTime: new Date().toISOString().slice(0, 16),
-  });
+  const [searchPlate, setSearchPlate] = useState('');
+  const [searchResult, setSearchResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchSlots = async () => {
     try {
-      const { data } = await api.get('/slots');
-      setSlots(data.data || []);
-    } catch (error) { 
-      toast.error("API Error: Check Backend Connection"); 
-    } finally { 
-      setLoading(false); 
+      const res = await axios.get('http://localhost:5000/api/slots');
+      setSlots(res.data);
+    } catch (err) {
+      toast.error('Failed to load slots');
     }
   };
 
-  useEffect(() => { 
-    fetchSlots(); 
+  useEffect(() => {
+    fetchSlots();
+    const interval = setInterval(fetchSlots, 5000); // Live sync every 5s
+    return () => clearInterval(interval);
   }, []);
 
-  const handleSave = async (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
+    if (!searchPlate.trim()) return;
+    setLoading(true);
     try {
-      await api.post('/slots', { ...formData, status: 'Parked', parkingFee: 0 });
-      toast.success("Vehicle Parked Successfully!");
-      document.getElementById('add_modal').close();
-      setFormData({ ...formData, parkingSlot: '', vehicleNumber: '' });
-      fetchSlots();
-    } catch (error) { 
-      toast.error("Slot already occupied!"); 
+      const res = await axios.get(`http://localhost:5000/api/vehicles/find/${searchPlate}`);
+      setSearchResult(res.data);
+      toast.success('Vehicle located!');
+    } catch (err) {
+      setSearchResult(null);
+      toast.error(err.response?.data?.message || 'Vehicle not found');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleBack = () => {
-    document.getElementById('add_modal').close();
+  const handleCheckout = async (plate) => {
+    if (!window.confirm(`Checkout vehicle ${plate}?`)) return;
+    try {
+      const res = await axios.post('http://localhost:5000/api/vehicles/checkout', { licensePlate: plate });
+      toast.success(`Vehicle exited! Total Fee: ₹${res.data.feeCharged}`);
+      setSearchResult(null);
+      fetchSlots();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Checkout failed');
+    }
   };
 
-  if (loading) return (
-    <div className="flex justify-center mt-20">
-      <span className="loading loading-bars text-primary loading-lg"></span>
-    </div>
-  );
+  const totalSlots = slots.length;
+  const occupiedSlots = slots.filter((s) => s.isOccupied).length;
+  const availableSlots = totalSlots - occupiedSlots;
 
   return (
-    <div className="p-6 pt-10 space-y-6 bg-base-100 min-h-screen font-sans">
-      
-      {/* HEADER SECTION WITH PROPER TOP SPACING */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-xl border border-base-200 mt-4">
-        <div className="flex items-center gap-4">
-          <Activity className="text-primary" size={32} strokeWidth={3} />
-          <div>
-            <h1 className="text-2xl font-black uppercase italic tracking-tighter text-neutral">
-              PARKING <span className="text-primary">TRACKING</span>
-            </h1>
-            <p className="text-[10px] font-black text-neutral/60 uppercase tracking-widest">
-              Hostel Management System
-            </p>
+    <div className="min-h-screen bg-slate-100 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+
+        {/* Stats Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <span className="text-xs font-bold text-slate-400 uppercase">Total Slots</span>
+            <div className="text-3xl font-black text-slate-800 mt-1">{totalSlots}</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <span className="text-xs font-bold text-emerald-500 uppercase">Available</span>
+            <div className="text-3xl font-black text-emerald-600 mt-1">{availableSlots}</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <span className="text-xs font-bold text-rose-500 uppercase">Occupied</span>
+            <div className="text-3xl font-black text-rose-600 mt-1">{occupiedSlots}</div>
           </div>
         </div>
-        
-        {/* ULTRA-BOLD CHECK-IN BUTTON */}
-        <button 
-          className="btn btn-neutral btn-md px-10 shadow-2xl text-white border-none font-black uppercase tracking-widest hover:scale-105 transition-all" 
-          onClick={() => document.getElementById('add_modal').showModal()}
-        >
-          <PlusCircle size={22} strokeWidth={3} /> New Check-In
-        </button>
-      </div>
 
-      {/* QUICK METRICS / ANALYTICS BAR */}
-      <div className="grid grid-cols-3 gap-4 my-4">
-        <div className="bg-white p-4 rounded-xl shadow-md border border-base-200 text-center">
-          <p className="text-[10px] font-bold text-neutral/50 uppercase">Total Occupied</p>
-          <p className="text-2xl font-black text-primary">
-            {slots.filter(s => s.status === 'Parked').length} / 10
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-md border border-base-200 text-center">
-          <p className="text-[10px] font-bold text-neutral/50 uppercase">Available Slots</p>
-          <p className="text-2xl font-black text-success">
-            {10 - slots.filter(s => s.status === 'Parked').length}
-          </p>
-        </div>
-        <div className="bg-white p-4 rounded-xl shadow-md border border-base-200 text-center">
-          <p className="text-[10px] font-bold text-neutral/50 uppercase">System Status</p>
-          <p className="text-xs font-black text-success mt-2">ONLINE 🟢</p>
-        </div>
-      </div>
-
-      {/* PARKING SLOTS GRID WITH LIVE DURATION */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {slots.filter(s => s.status === 'Parked').map((slot) => {
-          const entryTime = new Date(slot.entryTime);
-          const now = new Date();
-          const diffMinutes = Math.floor((now - entryTime) / (1000 * 60));
-          const hours = Math.floor(diffMinutes / 60);
-          const minutes = diffMinutes % 60;
-
-          return (
-            <div key={slot._id} className="card bg-white border-2 border-base-200 shadow-xl hover:border-primary transition-all">
-              <div className="card-body p-5">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="badge badge-neutral font-black text-[11px] uppercase text-white px-3 py-3 shadow-sm">
-                    {slot.parkingSlot}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-black text-success uppercase tracking-widest">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success"></span>
-                    </span>
-                    LIVE
-                  </span>
-                </div>
-                
-                {/* VEHICLE NUMBER */}
-                <h2 className="font-black text-3xl font-mono text-neutral uppercase tracking-tighter mb-1">
-                  {slot.vehicleNumber}
-                </h2>
-                
-                {/* DURATION TIMER */}
-                <div className="bg-base-200 p-2 rounded-lg my-2 flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-neutral/60 uppercase">Duration:</span>
-                  <span className="text-xs font-black font-mono text-primary">
-                    {hours > 0 ? `${hours}h ` : ''}{minutes}m
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-base-100">
-                  <p className="text-[11px] text-primary uppercase font-black tracking-widest">{slot.vehicleType}</p>
-                  <p className="text-[9px] font-bold text-neutral/40">SLOT ACTIVE</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ADD VEHICLE MODAL */}
-      <dialog id="add_modal" className="modal">
-        <div className="modal-box max-w-xl bg-white text-neutral">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-black text-2xl uppercase italic">Vehicle Entry</h3>
-            <button type="button" onClick={handleBack} className="btn btn-sm btn-ghost gap-2 font-black">
-              <ArrowLeft size={16} strokeWidth={3} /> Back
-            </button>
-          </div>
-          
-          <form onSubmit={handleSave} className="grid grid-cols-1 gap-5">
-            <div className="flex gap-2">
-              {Object.keys(RATES).map(type => (
-                <button 
-                  key={type} 
-                  type="button" 
-                  onClick={() => setFormData({...formData, vehicleType: type})} 
-                  className={`btn flex-1 font-black uppercase tracking-widest ${formData.vehicleType === type ? 'btn-neutral text-white' : 'btn-outline'}`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-            
-            <select 
-              className="select select-bordered font-black text-lg h-14" 
-              required 
-              value={formData.parkingSlot} 
-              onChange={(e) => setFormData({...formData, parkingSlot: e.target.value})}
-            >
-              <option value="" disabled>Select Slot (A1-A10)</option>
-              {['A1','A2','A3','A4','A5','A6','A7','A8','A9','A10'].map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-
-            <input 
-              type="text" 
-              className="input input-bordered uppercase font-mono font-black text-xl h-14" 
-              placeholder="Vehicle Number" 
-              required 
-              value={formData.vehicleNumber} 
-              onChange={(e) => setFormData({...formData, vehicleNumber: e.target.value.toUpperCase()})} 
+        {/* Vehicle Finder Section */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-base font-bold text-slate-800 mb-3">🔍 Vehicle Location Finder</h2>
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Enter Plate Number (e.g. MH05CJ8254)"
+              value={searchPlate}
+              onChange={(e) => setSearchPlate(e.target.value.toUpperCase())}
+              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
             />
-
-            <div className="form-control">
-              <label className="label py-1">
-                <span className="label-text font-black text-[11px] uppercase text-neutral/60 tracking-widest">Entry Time</span>
-              </label>
-              <input 
-                type="datetime-local" 
-                className="input input-bordered font-black h-14" 
-                value={formData.entryTime} 
-                onChange={(e) => setFormData({...formData, entryTime: e.target.value})} 
-              />
-            </div>
-            
-            <div className="flex gap-3 mt-4">
-              <button 
-                type="button" 
-                onClick={handleBack} 
-                className="btn btn-outline flex-1 uppercase font-black tracking-widest"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                className="btn btn-neutral flex-[2] uppercase font-black tracking-widest shadow-xl text-white border-none"
-              >
-                Confirm Parking
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow hover:bg-indigo-700"
+            >
+              {loading ? 'Searching...' : 'Locate'}
+            </button>
           </form>
+
+          {searchResult && (
+            <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-indigo-900">Vehicle: {searchResult.licensePlate}</p>
+                <p className="text-xs font-semibold text-indigo-700 mt-0.5">
+                  Slot: <span className="text-base font-black">{searchResult.slotNumber}</span> (Floor {searchResult.floorLevel}, Zone {searchResult.zone})
+                </p>
+              </div>
+              <button
+                onClick={() => handleCheckout(searchResult.licensePlate)}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow"
+              >
+                Exit / Checkout Gate
+              </button>
+            </div>
+          )}
         </div>
-      </dialog>
+
+        {/* Live Slot Map Display */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-base font-bold text-slate-800">🗺️ Live Parking Slot Grid (Real-Time)</h2>
+            <div className="flex gap-4 text-xs font-bold">
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-emerald-500 rounded-full inline-block"></span> Free</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-3 bg-rose-500 rounded-full inline-block"></span> Occupied</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {slots.map((slot) => (
+              <div
+                key={slot._id}
+                className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center transition ${
+                  slot.isOccupied
+                    ? 'bg-rose-50 border-rose-300 text-rose-800'
+                    : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                }`}
+              >
+                <span className="text-lg font-black">{slot.slotNumber}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider mt-1 opacity-75">
+                  {slot.slotType} {slot.hasEVCharging ? '⚡' : ''}
+                </span>
+                <span className="text-[11px] font-semibold mt-2">
+                  {slot.isOccupied ? (slot.currentVehicle?.licensePlate || 'Occupied') : 'Available'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 };
