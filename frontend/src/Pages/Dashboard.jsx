@@ -60,10 +60,10 @@ const Dashboard = () => {
         <div className="flex items-center gap-4">
           <Activity className="text-primary" size={32} strokeWidth={3} />
           <div>
-            <h1 className="text-2xl font-black uppercase italic tracking-tighter">
+            <h1 className="text-2xl font-black uppercase italic tracking-tighter text-neutral">
               PARKING <span className="text-primary">TRACKING</span>
             </h1>
-            <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">
+            <p className="text-[10px] font-black text-neutral/60 uppercase tracking-widest">
               Hostel Management System
             </p>
           </div>
@@ -81,19 +81,19 @@ const Dashboard = () => {
       {/* QUICK METRICS / ANALYTICS BAR */}
       <div className="grid grid-cols-3 gap-4 my-4">
         <div className="bg-white p-4 rounded-xl shadow-md border border-base-200 text-center">
-          <p className="text-[10px] font-bold opacity-50 uppercase">Total Occupied</p>
+          <p className="text-[10px] font-bold text-neutral/50 uppercase">Total Occupied</p>
           <p className="text-2xl font-black text-primary">
             {slots.filter(s => s.status === 'Parked').length} / 10
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-md border border-base-200 text-center">
-          <p className="text-[10px] font-bold opacity-50 uppercase">Available Slots</p>
+          <p className="text-[10px] font-bold text-neutral/50 uppercase">Available Slots</p>
           <p className="text-2xl font-black text-success">
             {10 - slots.filter(s => s.status === 'Parked').length}
           </p>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-md border border-base-200 text-center">
-          <p className="text-[10px] font-bold opacity-50 uppercase">System Status</p>
+          <p className="text-[10px] font-bold text-neutral/50 uppercase">System Status</p>
           <p className="text-xs font-black text-success mt-2">ONLINE 🟢</p>
         </div>
       </div>
@@ -130,7 +130,7 @@ const Dashboard = () => {
                 
                 {/* DURATION TIMER */}
                 <div className="bg-base-200 p-2 rounded-lg my-2 flex justify-between items-center">
-                  <span className="text-[10px] font-bold opacity-60 uppercase">Duration:</span>
+                  <span className="text-[10px] font-bold text-neutral/60 uppercase">Duration:</span>
                   <span className="text-xs font-black font-mono text-primary">
                     {hours > 0 ? `${hours}h ` : ''}{minutes}m
                   </span>
@@ -138,7 +138,7 @@ const Dashboard = () => {
 
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-base-100">
                   <p className="text-[11px] text-primary uppercase font-black tracking-widest">{slot.vehicleType}</p>
-                  <p className="text-[9px] font-bold opacity-40">SLOT ACTIVE</p>
+                  <p className="text-[9px] font-bold text-neutral/40">SLOT ACTIVE</p>
                 </div>
               </div>
             </div>
@@ -148,7 +148,7 @@ const Dashboard = () => {
 
       {/* ADD VEHICLE MODAL */}
       <dialog id="add_modal" className="modal">
-        <div className="modal-box max-w-xl bg-white">
+        <div className="modal-box max-w-xl bg-white text-neutral">
           <div className="flex justify-between items-center mb-6">
             <h3 className="font-black text-2xl uppercase italic">Vehicle Entry</h3>
             <button type="button" onClick={handleBack} className="btn btn-sm btn-ghost gap-2 font-black">
@@ -191,7 +191,7 @@ const Dashboard = () => {
 
             <div className="form-control">
               <label className="label py-1">
-                <span className="label-text font-black text-[11px] uppercase opacity-60 tracking-widest">Entry Time</span>
+                <span className="label-text font-black text-[11px] uppercase text-neutral/60 tracking-widest">Entry Time</span>
               </label>
               <input 
                 type="datetime-local" 
